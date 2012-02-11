@@ -9,7 +9,15 @@
 #ifndef __GAME_CONFIG_H
 #define __GAME_CONFIG_H
 
-//
+// basic setups
+
+#define GAME_DEBUG_DRAW                     1
+
+
+// misc game defines
+
+#define GAME_COLLISION_TERRAIN              ( id )1
+
 // Supported Autorotations:
 //		None,
 //		UIViewController,
