@@ -70,8 +70,7 @@
 	[director setOpenGLView:glView];
 	
 //	// Enables High Res mode (Retina Display) on iPhone 4 and maintains low res on all other devices
-	if( ! [director enableRetinaDisplay:YES] )
-		CCLOG(@"Retina Display Not supported");
+	// if( ! [director enableRetinaDisplay:YES] ) CCLOG(@"Retina Display Not supported");
 	
 	//
 	// VERY IMPORTANT:
@@ -84,7 +83,7 @@
 	//
 	[director setDeviceOrientation:kCCDeviceOrientationLandscapeLeft];
 	
-	[director setAnimationInterval:1.0/60];
+	[director setAnimationInterval: 1.0f / GAME_FPS ];
 	[director setDisplayFPS:YES];
 	
 	

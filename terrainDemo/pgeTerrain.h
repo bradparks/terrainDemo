@@ -12,58 +12,48 @@
 #import <Foundation/Foundation.h>
 #import "cocos2d.h"
 #import "ObjectiveChipmunk.h"
-#import "pgeTerrainTexture.h"
+#import "ChipmunkImageSampler.h"
 
 // ----------------------------------------------------------
 // defines
 
-#define TERRAIN_MAX_SEGMENTS                    100
-#define TERRAIN_CRUST_THICKNESS                 1
+#define TERRAIN_TILE_SIZE               128                 // a good number to use
+#define TERRAIN_PIXEL_SIZE              2                   // scale from terrain image to output
 
-#define TERRAIN_CELL_SIZE                       4
+#define TERRAIN_THICKNESS               1.0f                // thickness of terrain segments
+#define TERRAIN_GEOMETRY_REDUCTION      1.5f                // geometry reduction ( for smoother output )
+
+#define IS_TERRAIN( color )             ( color < 128 )     // dark is terrain
 
 // ----------------------------------------------------------
 // typedefs
 
-typedef enum {
-    TERRAIN_TYPE_SAND,
-    TERRAIN_TYPE_SOIL,
-    TERRAIN_TYPE_ICE,
-    TERRAIN_TYPE_COUNT,
-} TERRAIN_TYPE;
-
-/*
-typedef struct _terrainData {
-    CGPoint         p0;                 // points must be on 
-    CGPoint         P1;
-} terrainData;
-*/
-
 // ----------------------------------------------------------
 // interface
 
-@interface pgeTerrain : CCNode <ChipmunkObject> {
-    CGSize                      m_size;
-    TERRAIN_TYPE                m_type;
-    NSMutableArray*				m_shapeList;                // add shapes to this list
-    pgeTerrainTexture*          m_texture;
+@interface pgeTerrain : CCNode {
+    ChipmunkSpace*                  m_space;                // the chipmunk space
+    ChipmunkCGContextSampler*       m_sampler;              // image sampler
+    ChipmunkBasicTileCache*         m_cache;                // terrain cache 
+    CGSize                          m_size;                 // size of terrain image 
+    CGSize                          m_winSize;              // window size
 }
 
 // ----------------------------------------------------------
 // properties
 
-@property ( readonly ) NSArray* chipmunkObjects;
-@property ( readonly ) pgeTerrainTexture* texture;
 @property ( readonly ) CGSize size;
 
 // ----------------------------------------------------------
 // methods
 
-+( pgeTerrain* )terrainWithType:( TERRAIN_TYPE )type;
--( pgeTerrain* )initWithType:( TERRAIN_TYPE )type;
++( pgeTerrain* )terrainWithSpace:( ChipmunkSpace* )space andImage:( NSString* )filename;
+-( pgeTerrain* )initWithSpace:( ChipmunkSpace* )space andImage:( NSString* )filename;
 
--( void )reset:( TERRAIN_TYPE )type;
--( void )deform:( CGPoint )pos;
+-( BOOL )pointInsideTerrain:( CGPoint )pos;
+
+-( void )add:( CGPoint )pos withDiameter:( float )diameter;
+-( void )remove:( CGPoint )pos withDiameter:( float )diameter;
 
 // ----------------------------------------------------------
 

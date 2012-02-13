@@ -7,25 +7,30 @@
 //
 // ----------------------------------------------------------
 
+#import "GameConfig.h"
 #import "cocos2d.h"
 #import "ObjectiveChipmunk.h"
 #import <Foundation/Foundation.h>
+
 #import "pgeTerrain.h"
 #import "pgeWorld.h"
-#import "GameConfig.h"
 
 // ----------------------------------------------------------
 
 #define PLUS_FILE                   @"plus.png"
-#define PLUS_POSITION               CGPointMake( 410, 290 )
+#define PLUS_POSITION               CGPointMake( -70, -30 )
 
 #define MINUS_FILE                  @"minus.png"
-#define MINUS_POSITION              CGPointMake( 460, 290 )
+#define MINUS_POSITION              CGPointMake( -30, -30 )
 
 #define BUTTON_COLOR_OFF            ccORANGE
 #define BUTTON_COLOR_ON             ccYELLOW
 
 #define BUTTON_DETECTION_RANGE      32
+
+#define EDIT_INTERVAL               0.05f
+
+#define EDIT_TERRAIN_SIZE           24
 
 // ----------------------------------------------------------
 
@@ -42,6 +47,8 @@ typedef enum {
     CCSprite*               m_plus;
     CCSprite*               m_minus;
     USER_MODE               m_mode;
+    
+    float                   m_terrainTimer;
 }
 
 // ----------------------------------------------------------

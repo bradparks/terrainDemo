@@ -31,47 +31,36 @@
 // ----------------------------------------------------------
 
 -( id )init {
+    CGPoint upperRight;
+    
 	// always call "super" init
 	// Apple recommends to re-assign "self" with the "super" return value
 	self = [ super init ];
-	// initialize touch 
-	[ [ CCTouchDispatcher sharedDispatcher ] addTargetedDelegate:self priority:0 swallowsTouches:YES ];
 
+    // reset stuff
+    m_mode = USER_MODE_BALL;
+    upperRight = ccp( [ [ CCDirector sharedDirector ] winSize].width, [ [ CCDirector sharedDirector ] winSize].height );
+    
     // create world
     [ self addChild:WORLD ];
-    
-    // create terrain
-    m_terrain = [ pgeTerrain terrainWithType:TERRAIN_TYPE_SOIL ];
-#if GAME_DEBUG_DRAW == 1
-    // watch the actual texture
-    CGSize size = [ [ CCDirector sharedDirector ] winSize ];
-    CCSprite* sprite = [ CCSprite spriteWithTexture:m_terrain.texture.texture ];
-    sprite.color = ( ccColor3B ){ 128, 128, 255 };
-    sprite.opacity = 64;
-    sprite.position = ccpMult( ccp( size.width, size.height ), 0.5f );
-    sprite.scaleX = size.width / m_terrain.texture.size.width;
-    sprite.scaleY = -( size.height / m_terrain.texture.size.height );
-    [ self addChild:sprite ];
-#endif 
-    [ self addChild:m_terrain ];    
-    
-    // add terrain to world
-    [ WORLD.space add:m_terrain ];
-		
+    		
     // buttons
     m_plus = [ CCSprite spriteWithFile:PLUS_FILE ];
-    m_plus.position = PLUS_POSITION;
+    m_plus.position = ccpAdd( upperRight, PLUS_POSITION );
     m_plus.color = BUTTON_COLOR_OFF;
     [ self addChild:m_plus ];
     
     m_minus = [ CCSprite spriteWithFile:MINUS_FILE ];
-    m_minus.position = MINUS_POSITION;
+    m_minus.position = ccpAdd( upperRight, MINUS_POSITION );
     m_minus.color = BUTTON_COLOR_OFF;
     [ self addChild:m_minus ];
     
+	// initialize touch 
+	[ [ CCTouchDispatcher sharedDispatcher ] addTargetedDelegate:self priority:0 swallowsTouches:YES ];
+
 	// init animation
 	[ self schedule:@selector( animate: ) ];	
-	
+	    
     // done
 	return( self );
 }
@@ -91,8 +80,9 @@
 
 -( void )animate:( ccTime )dt {
     
+    m_terrainTimer += dt;
+    
     [ WORLD update:dt ];
-
 
 }
 
@@ -105,7 +95,7 @@
 	// get touch position and convert to screen coordinates
 	pos = [ touch locationInView: [ touch view ] ];
 	pos = [ [ CCDirector sharedDirector ] convertToGL:pos ];
-    
+        
     [ self ccTouchMoved:touch withEvent:event ];
     // done
     return( YES );
@@ -116,34 +106,21 @@
 -( void )ccTouchMoved:(UITouch *)touch withEvent:(UIEvent *)event {
 	CGPoint pos;
 	
-	// get touch position and convert to screen coordinates
-	pos = [ touch locationInView: [ touch view ] ];
-	pos = [ [ CCDirector sharedDirector ] convertToGL:pos ];
-    
-    switch ( m_mode ) {
-        case USER_MODE_ADD:
- 
-            [ m_terrain.texture modify:[ m_terrain.texture worldToTexture:pos ] size:12 add:YES ];
+    if ( m_terrainTimer > EDIT_INTERVAL ) {
+        m_terrainTimer = 0;
+        
+        // get touch position and convert to screen coordinates
+        pos = [ touch locationInView: [ touch view ] ];
+        pos = [ [ CCDirector sharedDirector ] convertToGL:pos ];
+        
+        if ( m_mode != USER_MODE_BALL ) {
             
-            [ WORLD.space remove:m_terrain ];
-            [ m_terrain reset:TERRAIN_TYPE_ICE ];
-            [ WORLD.space add:m_terrain ];
-                        
-            break;
+            // no need to modify coordinates, as terrain fills entire screen
+            if ( m_mode == USER_MODE_ADD ) [ WORLD.terrain add:pos withDiameter:EDIT_TERRAIN_SIZE ];
+            if ( m_mode == USER_MODE_REMOVE ) [ WORLD.terrain remove:pos withDiameter:EDIT_TERRAIN_SIZE ];
             
-        case USER_MODE_REMOVE:
-  
-            [ m_terrain.texture modify:[ m_terrain.texture worldToTexture:pos ] size:12 add:NO ];
-            
-            [ WORLD.space remove:m_terrain ];
-            [ m_terrain reset:TERRAIN_TYPE_ICE ];
-            [ WORLD.space add:m_terrain ];
-            
-            break;
-            
-        default:
-            break;
-    }
+        }
+    }    
     
 }
 
@@ -155,28 +132,23 @@
 	// get touch position and convert to screen coordinates
 	pos = [ touch locationInView: [ touch view ] ];
 	pos = [ [ CCDirector sharedDirector ] convertToGL:pos ];
-
-    if ( ccpDistance( pos, PLUS_POSITION ) < BUTTON_DETECTION_RANGE ) {
+    
+    if ( ccpDistance( pos, m_plus.position ) < BUTTON_DETECTION_RANGE ) {
         m_mode = USER_MODE_ADD;
         m_plus.color = BUTTON_COLOR_ON;
-        return;
-    } else {
-        m_plus.color = BUTTON_COLOR_OFF;
-    }
-    if ( ccpDistance( pos, MINUS_POSITION ) < BUTTON_DETECTION_RANGE ) {
-        m_mode = USER_MODE_REMOVE;
-        m_minus.color = BUTTON_COLOR_ON;
-        return;
-    } else {
         m_minus.color = BUTTON_COLOR_OFF;
+    } else if ( ccpDistance( pos, m_minus.position ) < BUTTON_DETECTION_RANGE ) {
+        m_mode = USER_MODE_REMOVE;
+        m_plus.color = BUTTON_COLOR_OFF;
+        m_minus.color = BUTTON_COLOR_ON;    
+    } else {
+        if ( ( m_mode == USER_MODE_BALL ) && ( [WORLD.terrain pointInsideTerrain:pos ] == NO ) )
+            [ WORLD addBall:pos ];
+        m_mode = USER_MODE_BALL;
+        m_plus.color = BUTTON_COLOR_OFF;
+        m_minus.color = BUTTON_COLOR_OFF;    
     }
 
-    if ( m_mode == USER_MODE_BALL ) {
-        if ( [ m_terrain.texture pointInside:[ m_terrain.texture worldToTexture:pos ] ] == NO ) [ WORLD addBall:pos ];
-    } 
-
-    m_mode = USER_MODE_BALL;
-    
 }
 
 

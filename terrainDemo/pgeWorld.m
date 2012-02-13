@@ -19,6 +19,7 @@
 // properties
 
 @synthesize space = m_space;
+@synthesize terrain = m_terrain;
 
 // ----------------------------------------------------------
 // methods
@@ -40,14 +41,15 @@
 -( pgeWorld* )init {
     self = [ super init ]; 
     // initialize
-    m_shapeList = [ [ NSMutableArray arrayWithCapacity:10 ] retain ];
+    m_ballList = [ [ NSMutableArray arrayWithCapacity:10 ] retain ];
     // create chipmunk space
     m_space = [ [ [ ChipmunkSpace alloc ] init ] retain ];
     m_space.gravity = CGPointMake( 0, WORLD_GRAVITY );
     m_space.damping = WORLD_DAMPING;
     m_space.iterations = 5;
-    // 
-    
+    // create terrain
+    m_terrain = [ pgeTerrain terrainWithSpace:m_space andImage:@"terraindemo.bmp" ];
+    [ self addChild:m_terrain ];
     // done
     return( self );
 }
@@ -56,7 +58,8 @@
 
 -( void )dealloc {
     // clean up
-    [ m_shapeList release ];
+    [ m_space release ];
+    [ m_ballList release ];
     // done
     [ super dealloc ];
 }
@@ -65,9 +68,23 @@
 // update the world
 
 -( void )update:( ccTime )dt {
+    ChipmunkShape* shape;
     
-    [ m_space step:dt ];
+    // update physics
+    [ m_space step:1.0f / GAME_FPS ];
     
+    // remove balls fallen out
+    // scan through balls
+    for ( int index = m_ballList.count - 1; index >= 0; index -- ) {
+        shape = [ m_ballList objectAtIndex:index ];
+        if ( shape.body.pos.y < 0 ) {
+            [ m_space removeBody:shape.body ];
+            [ m_space removeShape:shape ];
+            [ m_ballList removeObjectAtIndex:index ];
+        }
+    }
+     
+     
 }
 
 // ----------------------------------------------------------
@@ -76,24 +93,32 @@
     [ super draw ];
     //
 #if GAME_DEBUG_DRAW == 1
-    ChipmunkShape* shape;
+    cpSegmentShape* segment;
     cpCircleShape* circle;
     
-    // draw own stuff
-    glColor4f( 1, 1, 1, 1 );
-    
-    // scan through balls
-    for ( int index = m_shapeList.count - 1; index >= 0; index -- ) {
-        shape = [ m_shapeList objectAtIndex:index ];
-        circle = ( cpCircleShape* )shape.shape;
-        if ( circle->tc.y > 0 ) {
-            // draw circle
-            ccDrawCircle( circle->tc, circle->r, shape.body.angle, 32, YES );
-        } else {
-            // delete circle
-            [ m_space removeBody:shape.body ];
-            [ m_space removeShape:shape ];
-            [ m_shapeList removeObjectAtIndex:index ];
+    // iterate
+    for ( ChipmunkShape* shape in [ m_space shapes ] ) {
+        switch ( shape.shape->klass_private->type ) {
+            case CP_SEGMENT_SHAPE:
+                // draw terrain segments
+                glColor4f( 0, 1, 0, 1 );
+                segment = ( cpSegmentShape* )shape.shape;
+                ccDrawLine( segment->ta, segment->tb );
+                break;
+            case CP_CIRCLE_SHAPE:
+                // draw circle
+                glColor4f( 1, 1, 1, 1 );
+                circle = ( cpCircleShape* )shape.shape;
+                ccDrawCircle( circle->tc, circle->r, shape.body.angle, 32, YES );
+                break;
+            case CP_POLY_SHAPE:
+                
+                
+                
+                break;
+            default:
+                break;
+                
         }
     }
 #endif
@@ -104,7 +129,6 @@
 -( void )addBall:( CGPoint )pos {
     float mass = 20;
     float radius = 8;
-    // float radius = 8 + ( CCRANDOM_0_1( ) * 8 );
     
     ChipmunkBody* body = [ [ ChipmunkBody alloc ] initWithMass:mass andMoment:cpMomentForCircle( mass, 0, radius, CGPointZero ) ];
     body.pos = pos;
@@ -116,7 +140,7 @@
     shape.friction = 0.2f;
     [ m_space addShape:shape ];
     
-    [ m_shapeList addObject:shape ];
+    [ m_ballList addObject:shape ];
 
 }
 

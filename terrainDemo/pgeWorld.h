@@ -13,6 +13,8 @@
 #import "cocos2d.h"
 #import "ObjectiveChipmunk.h"
 
+#import "pgeTerrain.h"
+
 // ----------------------------------------------------------
 // defines
 
@@ -28,13 +30,15 @@
 
 @interface pgeWorld : CCNode {
     ChipmunkSpace*              m_space;
-    NSMutableArray*             m_shapeList;
+    NSMutableArray*             m_ballList;
+    pgeTerrain*                 m_terrain;
 }
 
 // ----------------------------------------------------------
 // properties
 
 @property ( readonly ) ChipmunkSpace* space;
+@property ( readonly ) pgeTerrain* terrain;
 
 // ----------------------------------------------------------
 // methods

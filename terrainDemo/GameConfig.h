@@ -12,7 +12,7 @@
 // basic setups
 
 #define GAME_DEBUG_DRAW                     1
-
+#define GAME_FPS                            30.0f
 
 // misc game defines
 
